@@ -1,0 +1,10 @@
+data_folder: ./asset/pkl_all/
+
+train:
+    saved_model: ./result/
+    save_folder: ./result/
+    epochs: 500
+    batch_size: 20
+    learning_rate: 0.0003
+    
+    num_classes: 398
