@@ -88,7 +88,7 @@ def get_call_window(mel,duration=256,mode='precise'):
       i+=50
       
     if(len(call) > 1):
-      return np.concatenate(call)
+      return np.concatenate(call).squeeze()
     elif(len(call) == 1):
       return np.array(call).squeeze(axis=0)
     else:
@@ -117,7 +117,8 @@ def preprocess(data, feature_extractor, blist):
         if bird in blist:
             BCencoding[blist.index(bird)] = 1
 
-    return [mel_list, BCencoding]
+    for i in range(len(mel_list)):
+        data_list.append(np.array([mel_list[i], BCencoding]))
 
 def main():
     call_list, blist = load_Metadata()
@@ -127,14 +128,17 @@ def main():
     random.shuffle(call_list)
 
     for i in range(0, len(PART_INDEXES)-1):
-      new_list = joblib.Parallel(n_jobs=8,prefer="threads")\
+      global data_list
+      data_list = []
+
+      joblib.Parallel(n_jobs=8,prefer="threads")\
       (joblib.delayed(preprocess)(data, feature_extractor, blist)\
        for data in tqdm(call_list[PART_INDEXES[i]:PART_INDEXES[i+1]]))
     
       with open('./asset/temp_{0}.pkl'.format(i),'wb') as f:
-          pickle.dump(new_list,f)
+          pickle.dump(data_list,f)
     
-      del new_list
+      del data_list
       
 if __name__ == "__main__":
     main()
