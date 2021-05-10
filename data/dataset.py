@@ -16,6 +16,7 @@ class BirdCallDataset(Dataset):
         num_all_file = 0
         self.dataset=list()
         for pkl in pkl_list:
+            print(f'File_{pkl} Loading...')
             with open(os.path.join(pkl_dir,pkl), 'rb') as f:
                 temp = pickle.load(f)
                 for bird in temp:

@@ -3,6 +3,7 @@ source from https://github.com/Alibaba-MIIL/ASL/blob/main/src/loss_functions/los
 '''
 import torch
 import torch.nn as nn
+import numpy as np
 
 
 class AsymmetricLoss(nn.Module):
@@ -145,3 +146,4 @@ class ASLSingleLabel(nn.Module):
             loss = loss.mean()
 
         return loss
+    

@@ -16,6 +16,8 @@ from torch.cuda.amp import GradScaler, autocast
 import numpy as np
 import time
 import warnings
+import torch.nn.functional as F
+from sklearn.metrics import f1_score
 warnings.filterwarnings("ignore") 
 
 
@@ -95,10 +97,10 @@ def main():
     # Run Training Session
     with tqdm(range(epochs),unit="epoch") as tepoch:
         for epoch in tepoch:
-            tepoch.set_description(f" Epoch {epoch}")
-            
             model.train()
-            for data in dataloader:
+            for batch,data in enumerate(dataloader):
+                tepoch.set_description(f" Epoch {epoch+1}/{batch} ")
+                
                 wav, bird = data
                 wav = wav.to(device)
                 bird = bird.to(device)
@@ -118,12 +120,18 @@ def main():
                 # optimizer.step()
 
                 scheduler.step()
-
                 ema.update(model)
-
+                
+                pred_score = torch.where(F.softmax(output,dim=1)>conf['train']['threshold'],1,0)
+                t1 = pred_score.cpu().detach().numpy()[0]
+                t2 = bird.cpu().detach().numpy()[0]
+                
                 torch.nn.utils.clip_grad_norm_(model.parameters(),5)  # gradient clipping with 5 (Default)
                 #https://kh-kim.gitbook.io/natural-language-processing-with-pytorch/00-cover-6/05-gradient-clipping
-            
+                tepoch.set_postfix(loss=loss_avg.val().item(), f1_score=f1_score(t1,t2))
+                
+                del wav, bird, loss, output, t1,t2,pred_score
+                
             if loss_avg.val().item() < best_loss:
                 best_loss = loss_avg.val().item()
                 torch.save(model.state_dict(),os.path.join(conf['train']['save_folder'],f'model_{cur_time}.pth'))
@@ -133,7 +141,6 @@ def main():
             with torch.no_grad():
                 pass
             '''
-            tepoch.set_postfix(loss=loss_avg.val().item())
             
 if __name__ == "__main__":
     main()
