@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import torch
 from utils.logging import Averager
-from modules.ResNet import resnet152
+from modules.ResNet import resnet152, resnet50
 from utils.loss import AsymmetricLoss
 from utils.ema import ModelEma
 from torch.optim import lr_scheduler
@@ -43,6 +43,14 @@ def parse_arguments():
         help="Determine whether Load model from saved or not",
         default=False
     )
+    
+    parser.add_argument(
+        "-f",
+        "--file_name",
+        type=str,
+        help="File name for saving trained model",
+        default=f"{time.time()}"
+    )
     return parser.parse_args()
 
 def main():
@@ -62,7 +70,8 @@ def main():
     #model = Model(conf['model'])
     
     # init model
-    model = resnet152(num_classes=conf['train']['num_classes'])
+    #model = resnet152(num_classes=conf['train']['num_classes'])
+    model = resnet50(num_classes=conf['train']['num_classes'])
     model.to(device)
     ema = ModelEma(model, 0.9997)
 
@@ -95,6 +104,7 @@ def main():
     best_loss = 100
     cur_time = time.time()
     # Run Training Session
+    print(len(dataset))
     with tqdm(range(epochs),unit="epoch") as tepoch:
         for epoch in tepoch:
             model.train()
@@ -102,13 +112,16 @@ def main():
                 tepoch.set_description(f" Epoch {epoch+1}/{batch} ")
                 
                 wav, bird = data
+                
+                wav = wav.to(torch.float32)
                 wav = wav.to(device)
-                bird = bird.to(device)
+                bird_smooth = np.where(bird==1,0.995,0.0025)
+                bird_smooth = torch.from_numpy(bird_smooth).to(device)
                 
                 with autocast():  # mixed precision
                     output = model(wav).float()  # sigmoid will be done in loss !
 
-                loss = criterion(output, bird)
+                loss = criterion(output, bird_smooth)
                 loss_avg.add(loss)
                 model.zero_grad()
 
@@ -134,7 +147,7 @@ def main():
                 
             if loss_avg.val().item() < best_loss:
                 best_loss = loss_avg.val().item()
-                torch.save(model.state_dict(),os.path.join(conf['train']['save_folder'],f'model_{cur_time}.pth'))
+                torch.save(model.state_dict(),os.path.join(conf['train']['save_folder'],f'{args.file_name}.pth'))
             # validation section, ToDo.
             '''
             model.eval()

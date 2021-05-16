@@ -4,8 +4,11 @@ train:
     saved_model: ./result/
     save_folder: ./result/
     epochs: 500
-    batch_size: 20
-    learning_rate: 0.0003
+    batch_size: 40
+    learning_rate: 0.003
     
     threshold: 0.3
     num_classes: 397
+    
+model:
+    type: resnet50

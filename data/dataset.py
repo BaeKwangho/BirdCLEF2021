@@ -37,3 +37,7 @@ class BirdCallDataset(Dataset):
         bird = self.dataset[idx][1]
         return (wav,bird)
     
+    def normalize(image):
+        image = image.astype("float32", copy=False) / 255.0
+        image = np.stack([image, image, image])
+        return image

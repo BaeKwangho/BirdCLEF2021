@@ -97,6 +97,22 @@ def get_call_window(mel,duration=256,mode='precise'):
 def _normalize(S, min_db):
     return np.clip((S - min_db) / -min_db, 0, 1)
 
+def mono_to_color(X, eps=1e-6, mean=None, std=None):
+    mean = mean or X.mean()
+    std = std or X.std()
+    X = (X - mean) / (std + eps)
+    
+    _min, _max = X.min(), X.max()
+
+    if (_max - _min) > eps:
+        V = np.clip(X, _min, _max)
+        V = 255 * (V - _min) / (_max - _min)
+        V = V.astype(np.uint8)
+    else:
+        V = np.zeros_like(X, dtype=np.uint8)
+
+    return V
+
 def preprocess(data, feature_extractor, blist):
     wav, _ =librosa.load(data[0],sr=32000)
     wav = torch.from_numpy(wav.reshape((1,)+ wav.shape))
@@ -107,7 +123,8 @@ def preprocess(data, feature_extractor, blist):
         mel_spec = feature_extractor(wav)
 
     mel_spec = mel_spec.squeeze().numpy().T
-    mel_spec = _normalize(mel_spec, mel_spec.min())
+    mel_spec = mono_to_color(mel_spec)
+    #mel_spec = _normalize(mel_spec, mel_spec.min())
 
     mel_list = get_call_window(mel_spec.T, mode='collect')
 
@@ -124,7 +141,7 @@ def main():
     call_list, blist = load_Metadata()
     feature_extractor = get_feature_extractor()
     
-    PART_INDEXES = [0,5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000, 55000, 60000, -1]
+    PART_INDEXES = [0,12000, 24000, 36000, -1]
     random.shuffle(call_list)
 
     for i in range(0, len(PART_INDEXES)-1):
