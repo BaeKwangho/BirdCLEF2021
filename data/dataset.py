@@ -33,11 +33,12 @@ class BirdCallDataset(Dataset):
     
     
     def __getitem__(self, idx):
-        wav = self.dataset[idx][0][np.newaxis,:,:]
+        wav = self.dataset[idx][0][:,:]
+        wav = self.normalize(wav)
         bird = self.dataset[idx][1]
         return (wav,bird)
     
-    def normalize(image):
+    def normalize(self,image):
         image = image.astype("float32", copy=False) / 255.0
         image = np.stack([image, image, image])
         return image

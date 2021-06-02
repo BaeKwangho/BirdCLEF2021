@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import torch
 from utils.logging import Averager
-from modules.ResNet import resnet152, resnet50
+from models import get_model
 from utils.loss import AsymmetricLoss
 from utils.ema import ModelEma
 from torch.optim import lr_scheduler
